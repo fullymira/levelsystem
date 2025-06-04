@@ -44,12 +44,12 @@ app.post('/eventsub', (req, res) => {
   res.status(200).end();
 });
 
-// Twitch User-ID abrufen
+// Twitch User-ID holen
 async function getUserId(username) {
   const res = await axios.get('https://api.twitch.tv/helix/users', {
     headers: {
       'Client-ID': process.env.TWITCH_CLIENT_ID,
-      Authorization: process.env.TWITCH_OAUTH
+      Authorization: `Bearer ${process.env.TWITCH_OAUTH.replace('oauth:', '')}`
     },
     params: { login: username }
   });
@@ -57,7 +57,7 @@ async function getUserId(username) {
   return res.data.data[0]?.id;
 }
 
-// Token aktualisieren + EventSub registrieren
+// Token refresh + EventSub Registrierung
 async function refreshToken() {
   try {
     const res = await axios.post('https://id.twitch.tv/oauth2/token', null, {
@@ -69,7 +69,7 @@ async function refreshToken() {
       }
     });
 
-    process.env.TWITCH_OAUTH = `Bearer ${res.data.access_token}`;
+    process.env.TWITCH_OAUTH = `oauth:${res.data.access_token}`;
     process.env.TWITCH_REFRESH_TOKEN = res.data.refresh_token;
 
     console.log('🔄 Token aktualisiert');
@@ -83,18 +83,17 @@ async function refreshToken() {
 // EventSub Registrierung
 async function registerEventSubs() {
   const events = [
-  'channel.subscribe',
-  'channel.subscription.gift',
-  'channel.cheer',
-  'channel.channel_points_custom_reward_redemption.add',
-  'channel.hype_train.begin',
-  'channel.hype_train.progress',
-  'channel.hype_train.end',
-  'channel.raid',
-  'stream.online',
-  'stream.offline'
-];
-
+    'channel.subscribe',
+    'channel.subscription.gift',
+    'channel.cheer',
+    'channel.channel_points_custom_reward_redemption.add',
+    'channel.hype_train.begin',
+    'channel.hype_train.progress',
+    'channel.hype_train.end',
+    'channel.raid',
+    'stream.online',
+    'stream.offline'
+  ];
 
   try {
     const broadcasterId = await getUserId(process.env.TWITCH_CHANNEL);
@@ -133,10 +132,10 @@ async function registerEventSubs() {
   }
 }
 
-// Render-Port verwenden
+// Server starten
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server läuft auf Port ${PORT}`);
   refreshToken();
-  setInterval(refreshToken, 60 * 60 * 1000); // alle 60 Minuten
+  setInterval(refreshToken, 60 * 60 * 1000);
 });
