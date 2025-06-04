@@ -44,7 +44,20 @@ app.post('/eventsub', (req, res) => {
   res.status(200).end();
 });
 
-// Token refresh + EventSub Registrierung
+// Twitch User-ID abrufen
+async function getUserId(username) {
+  const res = await axios.get('https://api.twitch.tv/helix/users', {
+    headers: {
+      'Client-ID': process.env.TWITCH_CLIENT_ID,
+      Authorization: process.env.TWITCH_OAUTH
+    },
+    params: { login: username }
+  });
+
+  return res.data.data[0]?.id;
+}
+
+// Token aktualisieren + EventSub registrieren
 async function refreshToken() {
   try {
     const res = await axios.post('https://id.twitch.tv/oauth2/token', null, {
@@ -56,7 +69,7 @@ async function refreshToken() {
       }
     });
 
-    process.env.TWITCH_OAUTH = `oauth:${res.data.access_token}`;
+    process.env.TWITCH_OAUTH = `Bearer ${res.data.access_token}`;
     process.env.TWITCH_REFRESH_TOKEN = res.data.refresh_token;
 
     console.log('🔄 Token aktualisiert');
@@ -67,6 +80,7 @@ async function refreshToken() {
   }
 }
 
+// EventSub Registrierung
 async function registerEventSubs() {
   const events = [
     'channel.subscribe',
@@ -85,6 +99,8 @@ async function registerEventSubs() {
   ];
 
   try {
+    const broadcasterId = await getUserId(process.env.TWITCH_CHANNEL);
+
     const auth = await axios.post('https://id.twitch.tv/oauth2/token', null, {
       params: {
         grant_type: 'client_credentials',
@@ -103,7 +119,7 @@ async function registerEventSubs() {
       await axios.post('https://api.twitch.tv/helix/eventsub/subscriptions', {
         type,
         version: '1',
-        condition: { broadcaster_user_login: process.env.TWITCH_CHANNEL },
+        condition: { broadcaster_user_id: broadcasterId },
         transport: {
           method: 'webhook',
           callback: process.env.WEBHOOK_URL,
