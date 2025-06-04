@@ -83,17 +83,16 @@ async function refreshToken() {
 // ✅ EventSub Registrierung
 async function registerEventSubs() {
   const events = [
-    'channel.subscribe',
-    'channel.subscription.gift',
-    'channel.cheer',
-    'channel.channel_points_custom_reward_redemption.add',
-    'channel.hype_train.begin',
-    'channel.hype_train.progress',
-    'channel.hype_train.end',
-    'channel.raid',
-    'stream.online',
-    'stream.offline'
-  ];
+  'channel.subscribe',
+  'channel.subscription.gift',
+  'channel.cheer',
+  'channel.channel_points_custom_reward_redemption.add',
+  'channel.hype_train.begin',
+  'channel.hype_train.progress',
+  'channel.hype_train.end',
+  'stream.online',
+  'stream.offline'
+];
 
   try {
     const broadcasterId = await getUserId(process.env.TWITCH_CHANNEL);
